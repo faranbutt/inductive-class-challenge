@@ -86,4 +86,5 @@ jobs:
           
           # Only commit if the file actually changed
           git diff --quiet && git diff --staged --quiet || git commit -m "🏆 Update Leaderboard"
+          git pull origin main --rebase
           git push
