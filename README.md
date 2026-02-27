@@ -82,14 +82,14 @@ The graph was built using the following inductive pipeline to ensure biological 
 
 Create a single CSV file named `predictions.csv`.
 ```csv
-id,label
+id,y_pred
 41269,0
 41270,2
 ...
 ```
 
 **Requirements:**
-- Header must be exactly: `id,label`
+- Header must be exactly: `id,y_pred`
 - One row per test node
 - Labels must be integers in `[0–3]`
 
