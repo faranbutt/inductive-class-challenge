@@ -1,7 +1,5 @@
 # 🏆 Tumor Diagnosis Leaderboard
 
-| Rank | Team Name | Macro F1 Score | Submission Date |
+| Rank | Team | Macro F1 Score | Last Updated |
 | :--- | :--- | :--- | :--- |
-| - | *No submissions yet* | - | - |
-
-*This leaderboard is updated automatically by the Auto-Grader.*
+| 🥇 | submissions | 0.5355 | 2026-03-07 09:40 |
