@@ -80,17 +80,20 @@ jobs:
           git config --global user.name "LeaderboardBot"
           git config --global user.email "bot@github.com"
           
-          # 1. Hide the bot's newly generated leaderboard in a temporary folder
+          # 1. Hide the bot's newly generated leaderboard
           cp LEADERBOARD.md /tmp/LEADERBOARD.md
           
-          # 2. Wipe the bot's local workspace clean and pull the absolute latest data from the server
-          git reset --hard HEAD
-          git pull origin main
+          # 2. Fetch the absolute latest server data (no merging!)
+          git fetch origin main
           
-          # 3. Bring the bot's leaderboard back, completely overwriting whatever the server had
+          # 3. Switch to main and violently overwrite the local workspace to match the server
+          git checkout main || git checkout -b main origin/main
+          git reset --hard origin/main
+          
+          # 4. Bring the bot's newly generated leaderboard back
           cp /tmp/LEADERBOARD.md LEADERBOARD.md
           
-          # 4. Stage, commit, and push!
+          # 5. Stage, commit, and push!
           git add LEADERBOARD.md
           git diff --quiet && git diff --staged --quiet || git commit -m "🏆 Update Leaderboard"
           git push origin main
