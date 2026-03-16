@@ -19,44 +19,39 @@ def main():
     true_df = pd.read_csv(TRUTH_FILE).sort_values('id').reset_index(drop=True)
     
     # 2. Find All Submissions
-    # Recursive search for any csv file in submissions/
     files = glob.glob(f"{SUBMISSION_DIR}/**/*.csv", recursive=True)
     results = []
 
     print(f"🔍 Found {len(files)} submission files.")
 
     for file_path in files:
-        # Skip the example file
         if "sample_submission.csv" in file_path:
             continue
             
         try:
-            # Load Submission
             pred_df = pd.read_csv(file_path)
             
-            # Validation: check for required columns in the submission
+            # Validation: check for required columns
             if 'id' not in pred_df.columns or 'y_pred' not in pred_df.columns:
-                print(f"⚠️ Skipping {file_path}: Missing columns (id, y_pred)")
+                print(f"⚠️ Skipping {file_path}: Missing columns 'id' or 'y_pred'. Found: {list(pred_df.columns)}")
                 continue 
             
             # Validation: IDs match
             pred_df = pred_df.sort_values('id').reset_index(drop=True)
             if not pred_df['id'].equals(true_df['id']):
-                print(f"⚠️ Skipping {file_path}: ID mismatch")
+                print(f"⚠️ Skipping {file_path}: ID mismatch with ground truth.")
                 continue
 
             # Score (Macro F1)
-            # FIXED: true_df uses 'label', pred_df uses 'y_pred'
             score = f1_score(true_df['label'], pred_df['y_pred'], average='macro')
             
-            # Extract Team Name
-            # Logic: If file is 'submissions/TeamA.csv', team is 'TeamA'
             filename = os.path.basename(file_path)
             team_name = os.path.splitext(filename)[0]
 
-            # Cleanup: If name is generic like 'predictions', try folder name
             if team_name.lower() in ['predictions', 'submission', 'my_submission']:
                 team_name = os.path.basename(os.path.dirname(file_path))
+
+            print(f"✅ Scored {team_name}: {score:.4f}") # Now we can see the score in logs!
 
             results.append({
                 'team': team_name,
@@ -72,21 +67,21 @@ def main():
         print("No valid submissions found.")
         return
 
-    # Create dataframe
     df = pd.DataFrame(results)
     
-    # Sort by Score (Descending) and keep best score per team
+    # Logic: Keep ONLY the best score per team
+    original_count = len(df)
     df = df.sort_values(by='score', ascending=False)
-    # If a team submitted multiple times, keep their BEST score
     df = df.drop_duplicates(subset=['team'], keep='first')
     
-    # Ensure directory exists for the CSV backup
+    if len(df) < original_count:
+        print(f"ℹ️ Note: Removed {original_count - len(df)} duplicate/lower scores for the same team name.")
+
     os.makedirs("leaderboard", exist_ok=True)
     df.to_csv(LEADERBOARD_CSV, index=False)
     
-    # 4. Render Markdown
     render_markdown(df)
-    print("✅ Leaderboard Updated!")
+    print("🚀 Leaderboard Update Complete!")
 
 def render_markdown(df):
     md = "# 🏆 Tumor Diagnosis Leaderboard\n\n"
