@@ -80,7 +80,8 @@ The graph was built using the following inductive pipeline to ensure biological 
 
 ## 📝 Submission Format
 
-Create a single CSV file named `predictions.csv`.
+Create a single CSV file named strictly using your team name: `<team_name>.csv` (e.g., `emmanuel_owusu.csv`).
+
 ```csv
 id,y_pred
 41269,0
