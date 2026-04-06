@@ -80,7 +80,8 @@ The graph was built using the following inductive pipeline to ensure biological 
 
 ## 📝 Submission Format
 
-Create a single CSV file named `predictions.csv`.
+Create a single CSV file named strictly using your team name: `<team_name>.csv` (e.g., `emmanuel_owusu.csv`).
+
 ```csv
 id,y_pred
 41269,0
@@ -115,25 +116,35 @@ This will:
 - Train a basic GCN on the training graph
 - Generate a submission file at `submissions/baseline_submission.csv`
 
+
 ### 3️⃣ Encrypt Your Submission
 
 To preserve privacy, you **must encrypt** your CSV file before uploading. Do not upload raw CSV files.
+
 ```bash
-# Usage: python starter_code/encrypt.py <path_to_your_csv>
-python starter_code/encrypt.py submissions/predictions.csv
+# Usage: python starter_code/encrypt.py <path_to_your_team_csv>
+python starter_code/encrypt.py submissions/<team_name>.csv
+
+# Example:
+# python starter_code/encrypt.py submissions/emmanuel_owusu.csv
 ```
 
-This creates `submissions/predictions.csv.enc`.
+
 
 ### 4️⃣ Submit via GitHub
 
-> ⚠️ **IMPORTANT:** Do **NOT** commit the raw `.csv` file.
-```bash
-git add submissions/predictions.csv.enc
-git commit -m "Submission: Team Name"
-git push origin <your-branch-name>
-```
+> ⚠️ **IMPORTANT:** Do **NOT** commit the raw `.csv` file. Ensure you are only committing the `.enc` file with your team name.
 
+```bash
+git add submissions/<team_name>.csv.enc
+git commit -m "Add encrypted submission for <team_name>"
+git push origin <your-branch-name>
+
+# Example:
+# git add submissions/emmanuel_owusu.csv.enc
+# git commit -m "Add encrypted submission for emmanuel_owusu"
+# git push origin main
+```
 Then open a **Pull Request** against the `main` branch on GitHub.
 
 ---
