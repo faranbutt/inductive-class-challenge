@@ -11,13 +11,22 @@ if not private_key_data:
 
 private_key = rsa.PrivateKey.load_pkcs1(private_key_data.encode('utf8'))
 
-# 2. Find the .enc file
-enc_files = glob.glob('submissions/*.enc')
-if not enc_files:
-    print("ℹ️ No .enc file found.")
-    sys.exit(0)
+# 2. Find the .enc file (UPDATED LOGIC)
+# Check if the GitHub Action passed a specific file path as an argument
+if len(sys.argv) > 1:
+    enc_file_path = sys.argv[1]
+else:
+    # Fallback just in case you run this manually on your own computer
+    enc_files = glob.glob('submissions/*.enc')
+    if not enc_files:
+        print("ℹ️ No .enc file found.")
+        sys.exit(0)
+    enc_file_path = enc_files[0]
 
-enc_file_path = enc_files[0]
+if not os.path.exists(enc_file_path):
+    print(f"❌ Error: The file {enc_file_path} does not exist!")
+    sys.exit(1)
+
 print(f"🔓 Decrypting: {enc_file_path}")
 
 # 3. Decrypt
@@ -33,7 +42,6 @@ try:
         decrypted_chunk = rsa.decrypt(chunk, private_key)
         decrypted_data += decrypted_chunk
 
-    # --- FIX: Restore the original filename ---
     # input: submissions/TeamA.csv.enc  ->  output: submissions/TeamA.csv
     output_path = enc_file_path.replace(".enc", "") 
     
@@ -41,9 +49,6 @@ try:
         f.write(decrypted_data)
     
     print(f"✅ Decrypted to: {output_path}")
-    
-    # IMPORTANT: Print the filename so GitHub Actions can find it
-    print(f"::set-output name=decrypted_file::{output_path}")
 
 except Exception as e:
     print(f"❌ Decryption failed! {e}")
