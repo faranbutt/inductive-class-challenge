@@ -28,29 +28,38 @@ jobs:
       - name: Install Dependencies
         run: pip install pandas scikit-learn rsa
 
-      # 1. DECRYPT THE SUBMISSION
+      # 1. FIND THE NEW FILE AND DECRYPT IT
       - name: Decrypt Submission
         env:
           PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
-        run: python competition/decrypt.py
-
-      # 2. VALIDATE SUBMISSION (Enforce "One Submission" Rule)
-      - name: Validate Submission
         run: |
-          # Find the decrypted CSV (ignoring the sample file)
-          # This works regardless of whether the file is named 'TeamA.csv' or 'submission.csv'
-          FILE_PATH=$(ls submissions/*.csv | grep -v "sample_submission.csv" | head -n 1)
-
-          if [ -z "$FILE_PATH" ]; then
-            echo "::error::No decrypted CSV found! Decryption might have failed."
+          # Use git diff to find the exact .enc file added in this specific PR
+          # NEW_FILE=$(git diff --name-only origin/main...HEAD | grep '^submissions/.*\.enc$' | head -n 1)
+          # Safest way to diff in GitHub Actions using exact commit SHAs
+          NEW_FILE=$(git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.head.sha }} | grep '^submissions/.*\.enc$' | head -n 1)
+          
+          if [ -z "$NEW_FILE" ]; then
+            echo "::error::No new .enc file found in this Pull Request!"
             exit 1
           fi
+          
+          echo "🔍 Found new submission: $NEW_FILE"
+          
+          # Pass the exact new file to the Python decryptor
+          # (Ensure decrypt.py is written to accept a file argument: python decrypt.py <file>)
+          python competition/decrypt.py "$NEW_FILE"
+          
+          # Assuming decrypt.py strips '.enc' to make '.csv'
+          DECRYPTED_FILE="${NEW_FILE%.enc}"
+          
+          # Export the exact file path so next steps can use it
+          echo "EVAL_FILE=$DECRYPTED_FILE" >> $GITHUB_ENV
 
-          echo "🔍 Validating: $FILE_PATH"
-
-          # USE THE CSV PATH HERE (So pd.read_csv works)
-          python competition/validate_submission.py "$FILE_PATH" "data/public/test_nodes.csv" "leaderboard/leaderboard.csv"
-
+      # 2. VALIDATE SUBMISSION
+      - name: Validate Submission
+        run: |
+          echo "🔍 Validating: ${{ env.EVAL_FILE }}"
+          python competition/validate_submission.py "${{ env.EVAL_FILE }}" "data/public/test_nodes.csv" "leaderboard/leaderboard.csv"
 
       # 3. RESTORE HIDDEN ANSWER KEY
       - name: Restore Secret Answer Key
@@ -63,16 +72,8 @@ jobs:
       - name: Run Scoring Script
         id: score
         run: |
-          FILE_PATH=$(ls submissions/*.csv | grep -v "sample_submission.csv" | head -n 1)
-          
-          echo "🔍 Previewing the hidden answer key to ensure it isn't corrupted:"
-          head -n 2 data/test_labels_hidden.csv
-          
-          echo "🐛 Running Python script directly to reveal any traceback errors:"
-          python competition/evaluate.py "$FILE_PATH" "data/test_labels_hidden.csv"
-          
-          echo "✅ Evaluation succeeded, capturing score..."
-          OUTPUT=$(python competition/evaluate.py "$FILE_PATH" "data/test_labels_hidden.csv")
+          echo "🐛 Running evaluation on ${{ env.EVAL_FILE }}..."
+          OUTPUT=$(python competition/evaluate.py "${{ env.EVAL_FILE }}" "data/test_labels_hidden.csv")
           SCORE=$(echo "$OUTPUT" | grep -oP 'SCORE=\K[0-9.]+')
           echo "extracted_score=$SCORE" >> $GITHUB_OUTPUT
         
